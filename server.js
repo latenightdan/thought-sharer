@@ -8,7 +8,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 app.use(require('./routes'));
-mongoose.connect(process.env.MONGOD_URI || 'mongodb://localhost:27017/pizza-hunt', {
+mongoose.connect(process.env.MONGOD_URI || 'mongodb://localhost/something', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
