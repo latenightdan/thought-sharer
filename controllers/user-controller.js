@@ -12,6 +12,7 @@ const userController = {
            if(!userData){
                res.status(400).json({message: "he's dead"})
                return;
+               //wrong id here crashes server. find out why?
            }
            res.json(userData)
        })
@@ -50,6 +51,19 @@ const userController = {
         res.json(newFriend);
         })
         .catch(err => res.json(err));
+    },
+    unfriend({params, body}, res){
+        User.findOneAndUpdate({_id: params.id},
+            {$pull: {friends: params.friendIdd}},
+            {new:true})
+            .then(newFriend => {
+                if (!newFriend) {
+                    res.status(404).json({message: 'not here, partner'});
+                    return;
+                }
+            res.json(newFriend);
+            })
+            .catch(err => res.json(err));
     },
     deleteUser({params, body}, res){
         User.findOneAndDelete(
