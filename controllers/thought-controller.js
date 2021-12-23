@@ -1,3 +1,4 @@
+
 const { Thought, User } = require('../models')
 
 const thoughtMaker = {
@@ -8,6 +9,11 @@ const thoughtMaker = {
     },
     getThoughtById({ params }, res) {
         Thought.findOne({ _id: params.id })
+        .populate({
+            path: 'reactions', 
+            select: '-__v'
+        })
+        .select('-__v')
             .then(thoughtData => {
                 if (!thoughtData) {
                     res.status(400).json({ message: "no thoughts here" })
@@ -45,13 +51,54 @@ const thoughtMaker = {
         )
             .then(killThought => {
                 if (!killThought) {
-                    res.status(404).json({ message: "the thought disappeared" })
-                    return;
+                    return res.status(404).json({ message: "the thought disappeared" });
                 }
-                res.json(killThought)
+                return User.findOneAndUpdate(
+                    {_id: params.id},
+                    {$pull: {thoughts: params.thoughtId}},
+                    {new: true}
+                ).then(killThought => {
+                    if(!killThought) {
+                        res.status(404).json({message: "no thoughts"})
+                        return;
+                    }
+                    res.json(killThought)
+                })
+                .catch(err => res.json(400).json(err))
             })
-            .catch(err => res.json(400).json(err))
+            
+    },
+    react({params, body}, res) {
+        Thought.findOneAndUpdate(
+            {_id: params.thoughtId},
+            {$push: {reactions: body}},
+            {new: true, runValidators: true}
+        )
+        .populate({
+            path: 'reactions',
+            select: '-__v'
+        })
+        .select('-__v')
+        .then(reactionData => {
+            if(!reactionData) {
+                res.status(404).json({message:"SOMETHING IS WRONG. PANIC"})
+                return;
+            }
+            res.json(reactionData);
+        })
+        .catch(err => res.json(err));
+    },
+
+    unReact({params}, res) {
+        Thought.findOneAndUpdate(
+            {_id: params.thoughtId},
+            {$pull: { reactions: { reactionId: params.reactionId}}},
+            { new: true }
+        )
+        .then(replyGone => res.json(replyGone))
+        .catch(err => res.json(err))
     }
+
 }
 
 module.exports = thoughtMaker;
